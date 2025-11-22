@@ -24,7 +24,12 @@ import android.widget.TextView;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import okhttp3.Request;
+import okhttp3.Response;
 
 import ml.melun.mangaview.R;
 import ml.melun.mangaview.Utils;
@@ -85,6 +90,62 @@ public class CaptchaActivity extends AppCompatActivity {
             @Nullable
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                if(p.getWebViewProxy() && request.getMethod().equalsIgnoreCase("GET")) {
+                    try {
+                        String url = request.getUrl().toString();
+                        // only proxy for the target domain to avoid breaking other things?
+                        // or proxy everything?
+                        // Let's proxy everything for now as the user said "Amazon Webview ... fails".
+                        
+                        Map<String, String> headers = new HashMap<>();
+                        for(Map.Entry<String, String> entry : request.getRequestHeaders().entrySet()){
+                            headers.put(entry.getKey(), entry.getValue());
+                        }
+                        // Add cookies from CookieManager to the request
+                        String cookies = cookiem.getCookie(url);
+                        if (cookies != null) {
+                            headers.put("Cookie", cookies);
+                        }
+
+                        Request.Builder builder = new Request.Builder()
+                                .url(url)
+                                .get();
+                        
+                        for(String key : headers.keySet()){
+                            builder.addHeader(key, headers.get(key));
+                        }
+
+                        Response response = httpClient.client.newCall(builder.build()).execute();
+                        
+                        // Sync cookies from response to CookieManager
+                        List<String> setCookies = response.headers("Set-Cookie");
+                        for (String cookie : setCookies) {
+                            cookiem.setCookie(url, cookie);
+                        }
+
+                        String contentType = "text/html";
+                        String encoding = "utf-8";
+                        if(response.body().contentType() != null){
+                            contentType = response.body().contentType().type() + "/" + response.body().contentType().subtype();
+                            if(response.body().contentType().charset() != null)
+                                encoding = response.body().contentType().charset().name();
+                        }
+                        
+                        // Convert headers
+                        Map<String, String> responseHeaders = new HashMap<>();
+                        for(int i=0; i<response.headers().size(); i++){
+                            responseHeaders.put(response.headers().name(i), response.headers().value(i));
+                        }
+
+                        String message = "OK";
+                        if(response.message()!=null && response.message().length()>0) message = response.message();
+
+                        return new WebResourceResponse(contentType, encoding, response.code(), message, responseHeaders, response.body().byteStream());
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
                 httpClient.agent = request.getRequestHeaders().get("User-Agent");
                 return super.shouldInterceptRequest(view, request);
             }

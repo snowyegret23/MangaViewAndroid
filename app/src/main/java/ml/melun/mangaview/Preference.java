@@ -86,19 +86,6 @@ public class Preference {
             startTab = sharedPref.getInt("startTab", 0);
             defUrl = sharedPref.getString("defUrl", "설정되지 않음");
             url = sharedPref.getString("url", "");
-            stretch = sharedPref.getBoolean("stretch", false);
-            leftRight = sharedPref.getBoolean("leftRight", false);
-            login = gson.fromJson(sharedPref.getString("login","{}"),new TypeToken<Login>(){}.getType());
-            autoUrl = sharedPref.getBoolean("autoUrl", true);
-            doublep = sharedPref.getBoolean("doublep", false);
-            doublepReverse = sharedPref.getBoolean("doublepReverse", false);
-            pageControlButtonOffset = sharedPref.getFloat("pageControlButtonOffset", -1);
-            baseMode = sharedPref.getInt("baseMode", base_comic);
-//            if(login != null && login.isValid()){
-//                setSession(login.getCookie());
-//            }
-        }catch(Exception e){
-            e.printStackTrace();
         }
     }
 
@@ -607,6 +594,201 @@ public class Preference {
     }
 
     public void setDoublep(boolean doublep){
+        }
+    }
+
+    public int findFavorite(MTitle title){
+        if(title.getId()>0){
+            return favorite.indexOf(title);
+        }
+        return -1;
+    }
+
+    public List<MTitle> getFavorite(){
+        return favorite;
+    }
+
+    public void setFavorites(List<MTitle> fav){
+        this.favorite = (List<MTitle>)(List<?>)fav;
+        Gson gson = new Gson();
+        prefsEditor.putString("favorite", gson.toJson(favorite));
+        prefsEditor.commit();
+    }
+
+    public void setRecents(List<MTitle> rec){
+        this.recent = (List<MTitle>)(List<?>)rec;
+        writeRecent();
+    }
+
+    public void setBookmarks(JSONObject book){
+        this.bookmark = book;
+        writeBookmark();
+    }
+
+    public List<MTitle> getRecent(){
+        return recent;
+    }
+
+
+//    public boolean match(String s1, String s2){
+//        return filterString(s1).matches(filterString(s2));
+//    }
+//    private String filterString(String input){
+//        int i=0, j=0, m=0, k=0;
+//        while(i>-1||j>-1||m>-1||k>-1){
+//            i = input.indexOf('(');
+//            j = input.indexOf(')');
+//            m = input.indexOf('/');
+//            k = input.indexOf('?');
+//            char[] tmp = input.toCharArray();
+//            if(i>-1) tmp[i] = ' ';
+//            if(j>-1) tmp[j] = ' ';
+//            if(m>-1) tmp[m] = ' ';
+//            if(k>-1) tmp[k] = ' ';
+//            input = String.valueOf(tmp);
+//        }
+//        return input;
+//    }
+
+    //for debug
+//    public void removeEpsFromData(){
+//        for(Title t:recent){t.removeEps();}
+//        for(Title t:favorite){t.removeEps();}
+//        writeRecent();
+//        Gson gson = new Gson();
+//        prefsEditor.putString("favorite", gson.toJson(favorite));
+//        prefsEditor.commit();
+//    }
+
+    public void setLogin(Login login){
+        this.login = login;
+        if(login == null)
+            prefsEditor.putString("login", "{}");
+        else
+            prefsEditor.putString("login", new Gson().toJson(login));
+        prefsEditor.commit();
+    }
+
+    public boolean check(){
+        //returns false if needs update
+        for(MTitle t: recent){
+            if(isInteger(t.getRelease())) return false;
+        }
+        for(MTitle t: favorite){
+            if(isInteger(t.getRelease())) return false;
+        }
+        return true;
+    }
+
+
+    public void check2(){
+        //returns false if needs update
+        Iterator<String> keys = bookmark.keys();
+        List<String> fix = new ArrayList<>();
+        while(keys.hasNext()){
+            String key = keys.next();
+            if(key.toCharArray()[1] != '.'){
+                fix.add(key);
+            }
+        }
+        String jsonStr = bookmark.toString();
+        for(String f : fix){
+            jsonStr = jsonStr.replace(f, base_comic +"."+f);
+        }
+        try {
+            this.bookmark = new JSONObject(jsonStr);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        writeBookmark();
+
+        fix.clear();
+        keys = pagebookmark.keys();
+        while(keys.hasNext()){
+            String key = keys.next();
+            if(key.toCharArray()[1] != '.'){
+                fix.add(key);
+            }
+        }
+        jsonStr = pagebookmark.toString();
+        for(String f : fix){
+            jsonStr = jsonStr.replace(f, base_comic +"."+f);
+        }
+        try {
+            this.pagebookmark = new JSONObject(jsonStr);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        writeViewerBookmark();
+    }
+    public Login getLogin(){
+        return login;
+    }
+
+    public JSONObject getBookmarkObject() {
+        return bookmark;
+    }
+
+//    public String getSession() {
+//        return session;
+//    }
+
+//    public void setSession(String session) {
+//        this.session = session;
+//        prefsEditor.putString("session", session);
+//        prefsEditor.commit();
+//    }
+
+    public boolean getAutoUrl() {
+        return autoUrl;
+    }
+
+    public void setAutoUrl(boolean autoUrl) {
+        this.autoUrl = autoUrl;
+        prefsEditor.putBoolean("autoUrl", autoUrl);
+        prefsEditor.commit();
+    }
+
+
+    public int getPrevPageKey() {
+        return prevPageKey;
+    }
+
+    public void setPrevPageKey(int prevPageKey) {
+        this.prevPageKey = prevPageKey;
+        prefsEditor.putInt("prevPageKey", prevPageKey);
+        prefsEditor.commit();
+    }
+
+    public int getNextPageKey() {
+        return nextPageKey;
+    }
+
+    public void setNextPageKey(int nextPageKey) {
+        this.nextPageKey = nextPageKey;
+        prefsEditor.putInt("nextPageKey", nextPageKey);
+        prefsEditor.commit();
+    }
+
+    public float getPageControlButtonOffset() {
+        return pageControlButtonOffset;
+    }
+
+    public void setPageControlButtonOffset(float pageControlButtonOffset) {
+        this.pageControlButtonOffset = pageControlButtonOffset;
+        prefsEditor.putFloat("pageControlButtonOffset", pageControlButtonOffset);
+        prefsEditor.commit();
+    }
+
+    public boolean getDoublep(){
+        return doublep;
+    }
+
+    public boolean getDoublepReverse(){
+        return doublepReverse;
+    }
+
+    public void setDoublep(boolean doublep){
         this.doublep = doublep;
         prefsEditor.putBoolean("doublep", doublep);
         prefsEditor.commit();
@@ -615,6 +797,16 @@ public class Preference {
     public void setDoublepReverse(boolean doublepReverse){
         this.doublepReverse = doublepReverse;
         prefsEditor.putBoolean("doublepReverse", doublepReverse);
+        prefsEditor.commit();
+    }
+
+    boolean webViewProxy;
+    public boolean getWebViewProxy() {
+        return webViewProxy;
+    }
+    public void setWebViewProxy(boolean webViewProxy) {
+        this.webViewProxy = webViewProxy;
+        prefsEditor.putBoolean("webViewProxy", webViewProxy);
         prefsEditor.commit();
     }
 }

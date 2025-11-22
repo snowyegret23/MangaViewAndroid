@@ -336,6 +336,12 @@ public class SettingsActivity extends AppCompatActivity {
         s_double_reverse.setOnClickListener(v -> s_double_reverse_switch.toggle());
         s_double_reverse_switch.setOnCheckedChangeListener((buttonView, isChecked) -> p.setDoublepReverse(isChecked));
 
+        ConstraintLayout s_proxy = this.findViewById(R.id.setting_proxy);
+        Switch s_proxy_switch = this.findViewById(R.id.setting_proxy_switch);
+        s_proxy_switch.setChecked(p.getWebViewProxy());
+        s_proxy.setOnClickListener(v -> s_proxy_switch.toggle());
+        s_proxy_switch.setOnCheckedChangeListener((buttonView, isChecked) -> p.setWebViewProxy(isChecked));
+
     }
 
     public static void urlSettingPopup(Context context, Preference p){
